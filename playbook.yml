@@ -1,0 +1,7 @@
+---
+  - name: Install Apache
+    hosts: all
+    become: true
+    roles:
+      - webapp
+    

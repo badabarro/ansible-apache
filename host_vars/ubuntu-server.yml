@@ -1,0 +1,3 @@
+ansible_host: 63.35.222.31
+ansible_password: cloud123
+ansible_become: true
