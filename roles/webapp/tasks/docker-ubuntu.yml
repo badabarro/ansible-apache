@@ -1,50 +1,75 @@
 ---
-- name: Update
+- name: Ensure apt cache is up to date
   apt:
     update_cache: yes
     upgrade: dist
+  become: true
 
-- name: Install Required Packages
+- name: Install required system packages
   apt:
-    name: "{{ item }}"
+    name:
+      - curl
+      - python3
+      - python3-pip
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - zip
+      - unzip
+      - apt-transport-https
+      - software-properties-common
     state: present
-  loop:
-    - curl
-    - python3
-    - python3-pip
-    - ca-certificates
-    - gnupg
-    - lsb-release
-    - zip
-    - unzip
-    - apt-transport-https
-    - software-properties-common
-    
-- name: Install Docker
+  become: true
+
+- name: Ensure pip is upgraded
+  pip:
+    name: pip
+    executable: pip3
+    state: latest
+  become: true
+
+- name: Install Python Docker SDK and requests
+  pip:
+    name:
+      - docker
+      - requests
+    executable: pip3
+  become: true
+
+- name: Download Docker installation script
   get_url:
     url: https://get.docker.com
     dest: /tmp/get-docker.sh
     mode: '0755'
+  become: true
 
-- name: Docker start deploy
+- name: Run Docker installation script
   command: sh /tmp/get-docker.sh
   become: true
 
-- name: Start and Enable Docker Service
+- name: Ensure Docker service is started and enabled
   service:
     name: docker
     state: started
     enabled: true
+  become: true
 
-- name: Check docker group
+- name: Ensure docker group exists
   group:
     name: docker
     state: present
+  become: true
 
-- name: Add User to Docker Group
+- name: Add current user to docker group
   user:
     name: "{{ ansible_user }}"
-    group: docker
+    groups: docker
     append: yes
   become: true
-  notify: Restart Docker
+
+  handlers:
+    - name: Restart Docker
+      service:
+        name: docker
+        state: restarted
+      become: true

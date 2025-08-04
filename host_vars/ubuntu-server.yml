@@ -1,3 +1,4 @@
-ansible_host: 63.35.222.31
-ansible_password: cloud123
+ansible_host: 192.168.56.10
+ansible_ssh_private_key_file: /home/vagrant/.ssh/id_rsa_ubuntu
 ansible_become: true
+ansible_python_interpreter: /usr/bin/python3

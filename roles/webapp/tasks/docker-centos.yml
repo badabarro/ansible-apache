@@ -1,53 +1,76 @@
 ---
-- name: Update And Install Packages
+- name: Update and install required packages
   package:
-    name: "{{ item }}"
+    name:
+      - epel-release
+      - wget
+      - yum-utils
+      - git
+      - python3
+      - python3-pip
+      - lvm2
+      - device-mapper-persistent-data
     state: present
-  loop:
-    - epel-release
-    - wget
-    - yum-utils
-    - git
-    - python3
-    - python3-pip
-    - lvm2
-    - device-mapper-persistent-data
+  become: true
 
-- name: Add Docker Repository
+- name: Add Docker repository
   yum_repository:
     name: docker
     description: Docker CE Stable Repository
     baseurl: https://download.docker.com/linux/centos/7/x86_64/stable
+    gpgcheck: yes
+    gpgkey: https://download.docker.com/linux/centos/gpg
     enabled: yes
+  become: true
 
-- name: Add Docker GPG Key
-  rpm_key:
-    state: present
-    key: https://download.docker.com/linux/centos/gpg
-
-- name: Install Docker
+- name: Install Docker packages
   package:
     name:
       - docker-ce
       - docker-ce-cli
       - containerd.io
     state: latest
+  become: true
 
-#- name: Start and Enable Docker Service
-#  service:
-#    name: docker
-#    state: started
-#    enabled: true
+- name: Start and enable Docker service
+  service:
+    name: docker
+    state: started
+    enabled: true
+  become: true
 
-- name: Add User to Docker Group
+- name: Ensure pip is upgraded
+  pip:
+    name: pip
+    executable: pip3
+    state: latest
+  become: true
+
+- name: Install Python Docker SDK and requests
+  pip:
+    name:
+      - docker
+      - requests
+    executable: pip3
+  become: true
+
+- name: Ensure docker group exists
+  group:
+    name: docker
+    state: present
+  become: true
+
+- name: Add current user to docker group
   user:
     name: "{{ ansible_user }}"
-    group: docker
+    groups: docker
     append: yes
+  become: true
   notify: Restart Docker
 
-- name: Install Docker Python Module
-  pip:
-    name: docker-py
-    state: latest
-    executable: pip3
+  handler:
+  - name: Restart Docker
+    service:
+      name: docker
+      state: restarted
+    become: true
